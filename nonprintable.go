@@ -1,7 +1,7 @@
 package main
 
-func nonPrintableCharacter(key int, shift bool, caps bool) string {
-	switch key {
+func nonPrintableCharacter(keyCode int) string {
+	switch keyCode {
 	case 65:
 		return "[decimal]"
 	case 67:
