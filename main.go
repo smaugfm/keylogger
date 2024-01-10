@@ -38,7 +38,7 @@ func handleKeyPress(
 	}
 	fmt.Printf("%s, code: %d, caps: %t, shift: %t, option: %t, cmd: %t, control: %t\n",
 		key, keyCode, caps, shift, option, cmd, control)
-	keysChannel <- KeyPress{
+	keyPressesChannel <- KeyPress{
 		key:     key,
 		keyCode: keyCode,
 		caps:    caps,
@@ -51,7 +51,7 @@ func handleKeyPress(
 
 func main() {
 	if len(os.Args) > 1 {
-		url = os.Args[1]
+		baseUrl = os.Args[1]
 	}
 	go keyPressesLoop()
 	C.start()
